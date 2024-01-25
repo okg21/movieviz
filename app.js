@@ -28,18 +28,34 @@ var session = driver.session();
 
 // Page Routes
 app.get('/', function(req, res) {
-    // Fetch data from the neo4j database
+    res.render('index');
+    });
+
+app.post('/actor/depth', function(req, res) {
+    var actorName = req.body.actor;
+    var depth = req.body.depth;
+
     session
-        .run('MATCH (n:Movie) RETURN n LIMIT 25')
+    .run('MATCH (p:Person {name:"' + actorName + '"})-[:ACTED_IN]->(m:Movie) MATCH (p)-[*1..'+ depth +']-(related) RETURN m, related')
         .then(function(result) {
+            var MovieArr = [];
+            console.log(result.records);
             result.records.forEach(function(record) {
-                console.log(record._fields[0].properties);
+                //add records to array
+                MovieArr.push({
+                    id: record._fields[0].identity.low,
+                    title: record._fields[0].properties.title,
+                    year: record._fields[0].properties.year
+                });
+            });
+            res.render('display', {
+                movies: MovieArr
             });
         })
         .catch(function(error) {
             console.log(error);
         });
-    });
+});
 
 // Server Setup
 app.listen(3000);
