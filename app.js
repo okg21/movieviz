@@ -5,6 +5,7 @@ var express = require('express');
 var path = require('path');
 var logger = require('morgan');
 var bodyParser = require('body-parser');
+var neo4j = require('neo4j-driver');
 
 
 // Initialize the app
@@ -21,9 +22,23 @@ app.use(bodyParser.json()); // Parse JSON data sent by client
 app.use(bodyParser.urlencoded({ extended: false })); // Parse URL encoded data sent by client
 app.use(express.static(path.join(__dirname, 'public'))); // Set the directory where static files are stored
  
+// Connect to Neo4j
+var driver = neo4j.driver('bolt://localhost', neo4j.auth.basic('neo4j', '123jn1lk2j3n'));
+var session = driver.session();
+
 // Page Routes
 app.get('/', function(req, res) {
-    res.send('Hello World!');
+    // Fetch data from the neo4j database
+    session
+        .run('MATCH (n:Movie) RETURN n LIMIT 25')
+        .then(function(result) {
+            result.records.forEach(function(record) {
+                console.log(record._fields[0].properties);
+            });
+        })
+        .catch(function(error) {
+            console.log(error);
+        });
     });
 
 // Server Setup
