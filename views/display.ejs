@@ -1,10 +1,59 @@
-<h1>Movies</h1>
-<ul
-<% movies.forEach(function(movie) { %>
-  <li><%= movie.title %></li>
-  <li><%= movie.year %></li>
-<% }); %>
-</ul>    
+<head>
+    <script src="../cytoscape.min.js"></script>
+    <script src="https://unpkg.com/layout-base/layout-base.js"></script>
+    <script src="https://unpkg.com/cose-base/cose-base.js"></script>
+    <script src="https://unpkg.com/cytoscape-fcose/cytoscape-fcose.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+</head>
+
+<style>
+    #cy {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0px;
+        left: 0px;
+    }
+
+    #contextMenu {
+        display: none;
+        position: absolute;
+        z-index: 1000;
+        background: white;
+        border: 1px solid black;
+        padding: 10px;
+    }
+
+    #contextMenu ul {
+        list-style: none; /* Remove bullet points */
+        margin: 0;
+        padding: 0;
+    }
+
+    #contextMenu li {
+        padding: 5px 10px;
+        color: black; 
+        cursor: pointer;
+    }
+
+    #contextMenu li:hover {
+        background-color: #f0f0f0; /* Visual feedback on hover */
+    }
+</style>
+
+<body>
+    <form id="actorForm" label="Actor Form" method="post">
+        <input type="text" name="actor" placeholder="Actor Name" required>
+        <input type="number" name="depth" placeholder="Depth" required>
+        <button type="submit">Submit</button>
+    </form>
+
+    <div id="contextMenu" style="display: none; position: absolute; z-index: 10; background: white; border: 1px solid black; padding: 10px;">
+        <ul>
+            <li id="showMovies" style="display: none;">Show movies</li>
+            <li id="showActors" style="display: none;">Show actors</li>
+        </ul>
     </div>
 
     <div id="cy"></div>
