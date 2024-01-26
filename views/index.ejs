@@ -1,10 +1,26 @@
-<form action="/actor/depth" method="post">
-    <label> Actor Name </label>
-    <input type="text" name="actor" placeholder="Actor Name">
-    <br>
-    <label> Graph Depth </label>
-    <input type="text" name="depth" placeholder="Depth">
-    <br>
-    <input type="submit" value="Submit">
-</form>
+<head>
+    <% /* You can use EJS tags to insert dynamic values. Here's an example with a dynamic title. */ %>
+    <title><Demo></title> 
+</head>
 
+<body>
+    <form action="/actor/depth" method="post">
+        <label> Actor Name </label>
+        <input type="text" name="actor" placeholder="Actor Name">
+        <br>
+        <label> Graph Depth </label>
+        <input type="text" name="depth" placeholder="Depth">
+        <br>
+        <input type="submit" value="Submit">
+    </form>
+</body>
+
+<style>
+    #cy {
+        width: 50%;
+        height: 50%;
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        border: 1px solid #000;
+    }
