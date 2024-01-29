@@ -29,7 +29,6 @@ app.use(express.json()); // Parse JSON data sent by client
 
 // Connect to Neo4j
 var driver = neo4j.driver('bolt://localhost', neo4j.auth.basic('neo4j', '123jn1lk2j3n'));
-var session = driver.session();
 
 // Global Variables
 var movieArr = [];
@@ -43,26 +42,37 @@ app.get('/', function(req, res) {
     });
 
 
-app.post('/addActorMovies', function(req, res) {
-    console.log(req.body);
+app.post('/addActorMovies', async function(req, res) {
     var actorId = parseInt(req.body.actorId);
-    console.log("actorID: " + actorId);
 
-    query = 'MATCH (actor:Person)-[edge:ACTED_IN]->(movie:Movie) WHERE ID(actor) = ' + actorId + ' RETURN movie, edge';
+    // Create a session for this specific request
+    var session = driver.session();
 
-    session
-        .run(query)
-        .then(function(result) {
-            result.records.forEach(function(record) {
-                edge = record._fields[1];
+    try {
+        // Parameterize your query to prevent injection attacks
+        var query = 'MATCH (actor:Person)-[edge:ACTED_IN]->(movie:Movie) WHERE ID(actor) = ' + actorId + ' RETURN movie, edge';
+        var result = await session.run(query);
+
+        result.records.forEach(function(record) {
+            edge = record._fields[1];
                 //if not inside the movieArr add it to movieArr and data
                 if (!movieArr.includes(record._fields[0].properties.title)) {
                     movieArr.push(record._fields[0].properties.title);
+
+                    //add nodes to data array 
+                    dataArr.push({
+                        data: {
+                            id: record._fields[0].identity.low,
+                            type: record._fields[0].labels[0],
+                            properties: record._fields[0].properties,
+                        }
+                    });
+                    
+                    //add edges to data array 
                     var edgeId = edge.start.low + '-' + edge.type + '-' + edge.end.low + '_' + edge.identity;
                     if (dataArr.some(e => e.data.id === edgeId)) {
                         return;
                     }
-                    console.log(edgeId);
                     dataArr.push({
                         data: {
                             id: edge.start.low + '-' + edge.type + '-' + edge.end.low + '_' + edge.identity, 
@@ -76,74 +86,144 @@ app.post('/addActorMovies', function(req, res) {
                     //print dataArr length
                     console.log(dataArr.length);
                 }
-            });
-            
-            res.render('display', {
-                dataArr: JSON.stringify(dataArr)
-            });
-        })
-        .catch(function(error) {
-            console.log(error);
         });
+        // Send the response
+        res.json(dataArr);
+    } catch (error) {
+        // Handle any errors that occurred
+        console.log(error);
+        res.status(500).send('Error occurred');
+    } finally {
+        // Ensure the session is closed
+        await session.close();
+    }
 });
 
-app.post('/actor/depth', function(req, res) {
-    var actorName = req.body.actor;
-    var depth = parseInt(req.body.depth)*2;
-    
-    session
-    .run(
-        'MATCH p = (actor:Person {name:"'+ actorName + '"})-[:ACTED_IN*0..' + depth + ']-(entity)WITH *, relationships(p) AS edge  RETURN entity, edge'
-    )
-        .then(function(result) {
-            result.records.forEach(function(record) {
-                //add title and actor names to arrays
-                if (record._fields[0].labels[0] === 'Movie') {
-                    movieArr.push(record._fields[0].properties.title);
-                } else {
-                    actorArr.push(record._fields[0].properties.name);
-                }
+app.post('/addMovieActors', async function(req, res) {
+    var movieId = parseInt(req.body.movieId);
 
-                //add nodes to data array in the cytoscape format
-                dataArr.push({
-                    data: {
-                      id: record._fields[0].identity.low,
-                      type: record._fields[0].labels[0],
-                      properties: record._fields[0].properties,
-                    }
-                });
+    // Create a session for this specific request
+    var session = driver.session();
 
-                //add edges to data array in the cytoscape format
-                if (record._fields[1].size != 0) {
-                    record._fields[1].forEach(function(edge) {
-                        //if it is already pushed continue
-                        var edgeId = edge.start.low + '-' + edge.type + '-' + edge.end.low + '_' + edge.identity;
-                        if (dataArr.some(e => e.data.id === edgeId)) {
-                            return;
+    try {
+        // Parameterize your query to prevent injection attacks
+        var query = 'MATCH (actor:Person)-[edge:ACTED_IN]->(movie:Movie) WHERE ID(movie) = ' + movieId + ' RETURN actor, edge';
+        var result = await session.run(query);
+
+        result.records.forEach(function(record) {
+            edge = record._fields[1];
+                //if not inside the movieArr add it to movieArr and data
+                if (!actorArr.includes(record._fields[0].properties.title)) {
+                    actorArr.push(record._fields[0].properties.title);
+
+                    //add nodes to data array 
+                    dataArr.push({
+                        data: {
+                            id: record._fields[0].identity.low,
+                            type: record._fields[0].labels[0],
+                            properties: record._fields[0].properties,
                         }
-                        dataArr.push({
-                            data: {
-                                id: edge.start.low + '-' + edge.type + '-' + edge.end.low + '_' + edge.identity, 
-                                source: edge.start.low,
-                                target: edge.end.low,
-                                type: edge.type,
-                                label: edge.type,
-                                properties: edge.properties,
-                            },
-                        });
                     });
+                    
+                    //add edges to data array 
+                    var edgeId = edge.start.low + '-' + edge.type + '-' + edge.end.low + '_' + edge.identity;
+                    if (dataArr.some(e => e.data.id === edgeId)) {
+                        return;
+                    }
+                    dataArr.push({
+                        data: {
+                            id: edge.start.low + '-' + edge.type + '-' + edge.end.low + '_' + edge.identity, 
+                            source: edge.start.low,
+                            target: edge.end.low,
+                            type: edge.type,
+                            label: edge.type,
+                            properties: edge.properties,
+                        }
+                    });
+                    //print dataArr length
+                    console.log(dataArr.length);
+                }
+        });
+        // Send the response
+        res.json(dataArr);
+    } catch (error) {
+        // Handle any errors that occurred
+        console.log(error);
+        res.status(500).send('Error occurred');
+    } finally {
+        // Ensure the session is closed
+        await session.close();
+    }
+});
+
+app.post('/actor/depth', async function(req, res) {
+    //get actor name and depth from the request
+    var actorName = req.body.actor;
+    var depth = parseInt(req.body.depth) * 2;
+    
+    //empty data array
+    dataArr = [];
+    
+    // Create a session for this specific request
+    var session = driver.session();
+
+    try {
+        // Run the query using await
+        var result = await session.run(
+            'MATCH p = (actor:Person {name:"' + actorName + '"})-[:ACTED_IN*0..' + depth + ']-(entity) WITH *, relationships(p) AS edge RETURN entity, edge');
+
+        // Process the result
+        result.records.forEach(function(record) {
+            //add title and actor names to arrays
+            if (record._fields[0].labels[0] === 'Movie') {
+                movieArr.push(record._fields[0].properties.title);
+            } else {
+                actorArr.push(record._fields[0].properties.name);
+            }
+
+            //add nodes to data array in the cytoscape format
+            dataArr.push({
+                data: {
+                    id: record._fields[0].identity.low,
+                    type: record._fields[0].labels[0],
+                    properties: record._fields[0].properties,
                 }
             });
-            //console.log(dataArr);
-            res.render('display', {
-                dataArr: dataArr
-            });
-        
-        })
-        .catch(function(error) {
-            console.log(error);
+
+            //add edges to data array in the cytoscape format
+            if (record._fields[1].size != 0) {
+                record._fields[1].forEach(function(edge) {
+                    //if it is already pushed continue
+                    var edgeId = edge.start.low + '-' + edge.type + '-' + edge.end.low + '_' + edge.identity;
+                    if (dataArr.some(e => e.data.id === edgeId)) {
+                        return;
+                    }
+                    dataArr.push({
+                        data: {
+                            id: edge.start.low + '-' + edge.type + '-' + edge.end.low + '_' + edge.identity, 
+                            source: edge.start.low,
+                            target: edge.end.low,
+                            type: edge.type,
+                            label: edge.type,
+                            properties: edge.properties,
+                        },
+                    });
+                });
+            }
         });
+        // Send the response
+        res.json(dataArr);
+    } catch (error) {
+        // Handle any errors that occurred
+        console.log(error);
+        res.status(500).send('Error occurred');
+    } finally {
+        // Ensure the session is closed
+        await session.close();
+    }
 });
+
+
 
 // Server Setup
 app.listen(3000);
