@@ -54,6 +54,18 @@
         background: #555;
     }
 
+    #properties {
+        position: fixed; /* Fixed or absolute depending on your layout */
+        top: 20px; /* Distance from the top of the viewport */
+        left: 20px; /* Distance from the left of the viewport */
+        width: 300px; /* Width of the properties box */
+        height: 600px; /* Height of the properties box */
+        border: 1px solid black; /* Border of the properties box */
+        padding: 10px; /* Padding inside the properties box */
+        background: white; /* Background color */
+        overflow-y: auto; /* Allow scrolling for overflow content */
+        z-index: 10; /* Ensure it's above other elements */
+    }
 
     #cy {
         position: absolute;
@@ -65,13 +77,13 @@
     }
 
     #contextMenu {
-    display: none;
-    position: fixed; /* Changed from absolute to fixed */
-    z-index: 1000;
-    background: white;
-    border: 1px solid black;
-    padding: 10px;
-}
+        display: none;
+        position: fixed; /* Changed from absolute to fixed */
+        z-index: 1000;
+        background: white;
+        border: 1px solid black;
+        padding: 10px;
+    }
 
     #contextMenu ul {
         list-style: none;
@@ -107,6 +119,11 @@
         </ul>
     </div>
 
+    <div id="properties" style="position: absolute; top: 260px; left: 20px; width: 300px; height: 600px; border: 1px solid black; padding: 10px; background: white;">
+        <h3>Properties</h3>
+        <div id="properties-content">Click on a node to see its properties.</div>
+      </div>
+      
     <div id="cy"></div>
 
     <script type="module">
@@ -216,6 +233,30 @@
         cy.on('tap', function (event) {
             document.getElementById('contextMenu').style.display = 'none';
         });
+
+        //Display properties on tap
+        cy.on('tap', 'node', function(evt){
+            var node = evt.target;
+            var propertiesHtml = '';
+
+            //'properties' is an object with key-value pairs
+            var properties = node.data('properties');
+            
+            for (var prop in properties) {
+                //born and released properties are year objects
+                if (prop === 'born' || prop === 'released') {
+                    propertiesHtml += '<b>' + prop + '</b>: ' + properties[prop].low + '<br>';
+                }
+                else{
+                    propertiesHtml += '<b>' + prop + '</b>: ' + properties[prop] + '<br>';
+                }
+            }
+
+            // Insert the properties into the properties-content div
+            document.getElementById('properties-content').innerHTML = propertiesHtml;
+        });
+
+
 
         function fetchMovies(actorId) {
             //create a post request to addActorMovies
