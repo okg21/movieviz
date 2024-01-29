@@ -102,6 +102,41 @@
         background-color: #f0f0f0;
         /* Visual feedback on hover */
     }
+
+    #timeTravelSliderContainer {
+        margin: 20px 0;
+        text-align: center; /* Center align the slider and label */
+    }
+
+    #timeTravelSlider {
+        width: 30%; /* Full-width */
+        height: 15px; /* Specified height */
+        background: #ddd; /* Grey background */
+        outline: none; /* Remove outline */
+        opacity: 0.7; /* Set transparency (cross-browser) */
+        -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+        transition: opacity .2s;
+    }
+
+    #timeTravelSlider:hover {
+        opacity: 1; /* Fully opaque on hover */
+    }
+
+    #timeTravelSlider::-webkit-slider-thumb {
+        -webkit-appearance: none; /* Override default look */
+        appearance: none;
+        width: 25px; /* Set a specific slider handle width */
+        height: 25px; /* Slider handle height */
+        background: #4CAF50; /* Green background */
+        cursor: pointer; /* Cursor on hover */
+    }
+
+    #timeTravelSlider::-moz-range-thumb {
+        width: 25px; /* Set a specific slider handle width */
+        height: 25px; /* Slider handle height */
+        background: #4CAF50; /* Green background */
+        cursor: pointer; /* Cursor on hover */
+    }
 </style>
 
 <body>
@@ -111,6 +146,16 @@
         <input type="submit" value="Submit">
     </form>
 
+    <!-- Time Travel Slider -->
+    <div id="timeTravelSliderContainer">
+        <label for="timeTravelSlider">Select a Year: <span id="sliderYearDisplay">2024</span></label>
+        <br>
+        <input type="range" id="timeTravelSlider" min="1900" max="2024" value="2024" step="1">
+        <br>
+        <button id="resetGraph">Reset Graph</button>
+    </div>
+
+
     <div id="contextMenu"
         style="display: none; position: absolute; z-index: 10; background: white; border: 1px solid black; padding: 10px;">
         <ul>
@@ -119,7 +164,7 @@
         </ul>
     </div>
 
-    <div id="properties" style="position: absolute; top: 260px; left: 20px; width: 300px; height: 600px; border: 1px solid black; padding: 10px; background: white;">
+    <div id="properties" style="position: absolute; top: 300px; left: 20px; width: 300px; height: 600px; border: 1px solid black; padding: 10px; background: white;">
         <h3>Properties</h3>
         <div id="properties-content">Click on a node to see its properties.</div>
       </div>
@@ -292,6 +337,55 @@
         }
 
 
+        //Add a class to hide nodes and edges
+        cy.style()
+            .selector('.hidden')
+            .style({
+                'display': 'none'
+            })
+            .update();
+
+        //Event listener for slider
+        document.addEventListener('DOMContentLoaded', function () {
+            var slider = document.getElementById('timeTravelSlider');
+            var yearDisplay = document.getElementById('sliderYearDisplay');
+            
+            slider.addEventListener('input', function (e) {
+                yearDisplay.textContent = e.target.value; // Update the display
+                filterGraphByYear(e.target.value);        // Filter the graph
+            });
+        });
+
+        // Event listener for reset button
+        document.getElementById('resetGraph').addEventListener('click', function() {
+            //unhide all nodes and edges
+            cy.elements().removeClass('hidden');
+            //reset slider
+            document.getElementById('timeTravelSlider').value = 2024;
+            document.getElementById('sliderYearDisplay').textContent = 2024;
+            cy.layout(newDataLayoutOptions).run();
+        });
+
+        function filterGraphByYear(year) {
+            // Hide all nodes and edges initially
+            cy.elements().addClass('hidden');
+
+            // Select and show nodes based on the 'born' or 'released' property
+            cy.nodes().forEach(function(node) {
+                var birthYear = node.data('properties').born?.low;
+                var releaseYear = node.data('properties').released?.low;
+
+                // Check if the node's year is less than or equal to the selected year
+                if ((birthYear && birthYear <= year) || (releaseYear && releaseYear <= year)) {
+                    node.removeClass('hidden');
+                    // Show the connected edges of the revealed nodes
+                    node.connectedEdges().removeClass('hidden');
+                }
+            });
+        }   
+
+
+
 
         // Pass data from server to client and add to cytoscape
         function addDataToCytoscape(dataArr) {
@@ -304,7 +398,6 @@
 
         // Event listener for form submission
         // Prevent the default form action
-
         document.addEventListener('DOMContentLoaded', function () {
             var form = document.getElementById('actorForm');
             if (form) {
@@ -321,8 +414,12 @@
                         url: "/actor/depth",
                         data: formData,
                         success: function (dataArr) {
+                            //add data and layout to cytoscape
                             addDataToCytoscape(dataArr)
-                            console.log(dataArr);
+
+                            //reset slider
+                            document.getElementById('timeTravelSlider').value = 2024;
+                            document.getElementById('sliderYearDisplay').textContent = 2024;
                         }
                     });
                 };
