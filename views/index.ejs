@@ -187,6 +187,10 @@
             nodeSeparation: 100,
             randomize: false,
         };
+        //TO-DO: context menus extension
+        //layout utilities: to define initial positions
+        //view utilities: to highlight nodes and imidiate neighbors
+
 
         var cy = cytoscape(
             {
@@ -299,8 +303,7 @@
 
             // Insert the properties into the properties-content div
             document.getElementById('properties-content').innerHTML = propertiesHtml;
-        });
-
+        });        
 
 
         function fetchMovies(actorId) {
@@ -333,7 +336,7 @@
 
         function addNewData(dataArr) {
             cy.add(dataArr);
-            cy.layout(layoutOptions).run();
+            cy.layout(newDataLayoutOptions).run();
         }
 
 
@@ -382,10 +385,9 @@
                     node.connectedEdges().removeClass('hidden');
                 }
             });
+            //display the graph
+            cy.layout(layoutOptions).run();
         }   
-
-
-
 
         // Pass data from server to client and add to cytoscape
         function addDataToCytoscape(dataArr) {

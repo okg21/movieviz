@@ -9,6 +9,15 @@ var neo4j = require('neo4j-driver');
 var cytoscape = require('cytoscape');
 var fcose = require('cytoscape-fcose');
 
+// Workaround for window not being defined, not sure if this is a good practice?
+window = {};
+
+var layoutUtilities = require('cytoscape-layout-utilities');
+cytoscape.use( layoutUtilities ); // register extension
+
+var viewUtilities = require('cytoscape-view-utilities');
+viewUtilities(cytoscape); // register extension
+
 cytoscape.use(fcose);
 
 
@@ -24,7 +33,7 @@ app.set('view engine', 'ejs'); // Set the view engine
 app.use(logger('dev')); // Log requests to the console
 app.use(bodyParser.json()); // Parse JSON data sent by client
 app.use(bodyParser.urlencoded({ extended: false })); // Parse URL encoded data sent by client
-app.use(express.static(path.join(__dirname, 'public'))); // Set the directory where static files are stored
+app.use(express.static(path.join(__dirname, 'public'))); // Set the directory where static files are stored 
 app.use(express.json()); // Parse JSON data sent by client
 
 // Connect to Neo4j
@@ -224,8 +233,6 @@ app.post('/actor/depth', async function (req, res) {
         await session.close();
     }
 });
-
-
 
 // Server Setup
 app.listen(3000);
