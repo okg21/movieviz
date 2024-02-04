@@ -1,3 +1,26 @@
+<!-- FILEPATH: /movieViz/views/index.ejs -->
+<!--
+    This HTML file represents the index page of the movie visualization application.
+    It contains a form for submitting actor and depth values, a time travel slider, a reset button,
+    a properties section, and a container for the Cytoscape graph.
+
+    The script section includes various JavaScript libraries for graph visualization and interaction,
+    as well as custom functions for fetching data, updating the graph, and handling user interactions.
+
+    The graph is rendered using the Cytoscape library, and the layout and view utilities APIs are used
+    for positioning and manipulating the graph elements.
+
+    The context menus extension is used to provide additional functionality for right-clicking on nodes,
+    and the view utilities API is used to show and hide nodes based on the selected year.
+
+    The form submission and context menu actions trigger AJAX calls to the server, which returns new data to update the graph.
+
+    The script also includes event listeners for the time travel slider and reset button, which filter
+    and reset the graph based on the selected year.
+
+    Overall, this page provides an interface for exploring movie data and visualizing relationships between actors and movies.
+-->
+
 <head>
     <script src="../cytoscape.min.js"></script>
     <script src="https://unpkg.com/layout-base/layout-base.js"></script>
@@ -26,14 +49,15 @@
         <button id="resetGraph">Reset Graph</button>
     </div>
 
-    <div id="properties" style="position: absolute; top: 300px; left: 20px; width: 300px; height: 600px; border: 1px solid black; padding: 10px; background: white;">
+    <div id="properties"
+        style="position: absolute; top: 300px; left: 20px; width: 300px; height: 600px; border: 1px solid black; padding: 10px; background: white;">
         <h3>Properties</h3>
         <div id="properties-content">Click on a node to see its properties.</div>
-      </div>
-      
+    </div>
+
     <div id="cy"></div>
 
-    <script type="module">        
+    <script type="module">
         var layoutOptions = {
             name: 'fcose',
             animate: true,
@@ -106,60 +130,56 @@
             }
         );
 
-        
+        //Initialize layout and view utilities apis
         var layoutApi = cy.layoutUtilities();
-
         var viewApi = cy.viewUtilities();
 
-
-
-
         cy.contextMenus({
-        menuItems: [
-            {
-            id: 'showMoviesOfPerson',
-            content: 'Show movies of person',
-            tooltipText: 'show movies of person',
-            selector: 'node[type="Person"]',
-            onClickFunction: function (event) {
-                var target = event.target || event.cyTarget;
-                fetchMovies(target._private.data.id);
-            }
-            },
-            {
-            id: 'showActorsOfMovie',
-            content: 'Show actors of movie',
-            tooltipText: 'Show actors of movie',
-            selector: 'node[type="Movie"]',
-            onClickFunction: function (event) {
-                var target = event.target || event.cyTarget;
-                fetchActors(target._private.data.id);
-            }
-            }
-        ]
+            menuItems: [
+                {
+                    id: 'showMoviesOfPerson',
+                    content: 'Show movies of person',
+                    tooltipText: 'show movies of person',
+                    selector: 'node[type="Person"]',
+                    onClickFunction: function (event) {
+                        var target = event.target || event.cyTarget;
+                        fetchMovies(target._private.data.id);
+                    }
+                },
+                {
+                    id: 'showActorsOfMovie',
+                    content: 'Show actors of movie',
+                    tooltipText: 'Show actors of movie',
+                    selector: 'node[type="Movie"]',
+                    onClickFunction: function (event) {
+                        var target = event.target || event.cyTarget;
+                        fetchActors(target._private.data.id);
+                    }
+                }
+            ]
         });
 
         //Display properties on tap
-        cy.on('tap', 'node', function(evt){
+        cy.on('tap', 'node', function (evt) {
             var node = evt.target;
             var propertiesHtml = '';
 
             //'properties' is an object with key-value pairs
             var properties = node.data('properties');
-            
+
             for (var prop in properties) {
                 //born and released properties are year objects
                 if (prop === 'born' || prop === 'released') {
                     propertiesHtml += '<b>' + prop + '</b>: ' + properties[prop].low + '<br>';
                 }
-                else{
+                else {
                     propertiesHtml += '<b>' + prop + '</b>: ' + properties[prop] + '<br>';
                 }
             }
 
             // Insert the properties into the properties-content div
             document.getElementById('properties-content').innerHTML = propertiesHtml;
-        });        
+        });
 
 
         function fetchMovies(actorId) {
@@ -189,7 +209,10 @@
         }
 
         function addNewData(dataArr) {
-            cy.add(dataArr);
+            //add new nodes
+            var newNodesAll = cy.collection(dataArr);
+            layoutApi.placeNewNodes(newNodesAll);
+
             cy.layout(newDataLayoutOptions).run();
         }
 
@@ -197,7 +220,7 @@
         document.addEventListener('DOMContentLoaded', function () {
             var slider = document.getElementById('timeTravelSlider');
             var yearDisplay = document.getElementById('sliderYearDisplay');
-            
+
             slider.addEventListener('input', function (e) {
                 yearDisplay.textContent = e.target.value; // Update the display
                 filterGraphByYear(e.target.value);        // Filter the graph
@@ -205,7 +228,7 @@
         });
 
         // Event listener for reset button
-        document.getElementById('resetGraph').addEventListener('click', function() {
+        document.getElementById('resetGraph').addEventListener('click', function () {
             //make the hidden nodes visible
             viewApi.show(cy.nodes('.hidden'));
             //remove hidden class from the nodes
@@ -223,7 +246,7 @@
             cy.elements().addClass('hidden');
 
             // Select and show nodes based on the 'born' or 'released' property
-            cy.nodes().forEach(function(node) {
+            cy.nodes().forEach(function (node) {
                 var birthYear = node.data('properties').born?.low;
                 var releaseYear = node.data('properties').released?.low;
 
@@ -240,7 +263,7 @@
 
             //display the graph
             cy.layout(layoutOptions).run();
-        }   
+        }
 
         // Pass data from server to client and add to cytoscape
         function addDataToCytoscape(dataArr) {
@@ -249,7 +272,7 @@
 
             //add new nodes
             var newNodesAll = cy.collection(dataArr);
-            layoutApi.placeNewNodes(newNodesAll);            
+            layoutApi.placeNewNodes(newNodesAll);
 
             //display
             cy.layout(layoutOptions).run();
