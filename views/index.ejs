@@ -242,6 +242,9 @@
         });
 
         function filterGraphByYear(year) {
+            //make the hidden nodes visible
+            viewApi.show(cy.nodes('.hidden'));
+
             // Hide all nodes and edges initially
             cy.elements().addClass('hidden');
 
@@ -259,10 +262,10 @@
             });
 
             //hide the nodes with view utilities
-            viewApi.hide(cy.nodes('.hidden'));
+            viewApi.hide(cy.$('.hidden'));
 
             //display the graph
-            cy.layout(layoutOptions).run();
+            cy.layout(newDataLayoutOptions).run();
         }
 
         // Pass data from server to client and add to cytoscape
