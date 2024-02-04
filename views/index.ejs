@@ -3,141 +3,12 @@
     <script src="https://unpkg.com/layout-base/layout-base.js"></script>
     <script src="https://unpkg.com/cose-base/cose-base.js"></script>
     <script src="https://unpkg.com/cytoscape-fcose/cytoscape-fcose.js"></script>
+    <script src="../cytoscape-context-menus.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-
+    <script src="../cytoscape-layout-utilities.js"></script>
+    <script src="../cytoscape-view-utilities.js"></script>
+    <link rel="stylesheet" type="text/css" href="../index.css">
 </head>
-
-<style>
-    /* Reset margins and padding for a clean slate */
-    body, h1, form, input {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
-    /* Use a web font for better typography */
-    body {
-        font-family: 'Roboto', sans-serif;
-        line-height: 1.6;
-        padding: 20px; /* Add padding to the body for some breathing room */
-        background: #f4f4f4; /* A light grey background */
-    }
-
-    /* Style the form for a cleaner look */
-    form#actorForm {
-        max-width: 600px; /* Limit the form width */
-        margin: 20px auto; /* Center the form on the page */
-        background: #fff; /* White background for the form */
-        padding: 20px; /* Padding inside the form */
-        border-radius: 8px; /* Rounded corners on the form */
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
-    }
-
-    /* Style inputs and submit button */
-    input[type="text"], input[type="submit"] {
-        width: 100%; /* Full width inputs */
-        padding: 10px; /* Padding inside inputs */
-        margin-bottom: 10px; /* Margin bottom for spacing */
-        border: 1px solid #ddd; /* Border color */
-        border-radius: 4px; /* Rounded corners on inputs */
-    }
-
-    /* Style the submit button to stand out */
-    input[type="submit"] {
-        background: #333; /* Dark background for the button */
-        color: #fff; /* White text */
-        cursor: pointer; /* Cursor to indicate it's clickable */
-    }
-
-    /* Hover effect for the button */
-    input[type="submit"]:hover {
-        background: #555;
-    }
-
-    #properties {
-        position: fixed; /* Fixed or absolute depending on your layout */
-        top: 20px; /* Distance from the top of the viewport */
-        left: 20px; /* Distance from the left of the viewport */
-        width: 300px; /* Width of the properties box */
-        height: 600px; /* Height of the properties box */
-        border: 1px solid black; /* Border of the properties box */
-        padding: 10px; /* Padding inside the properties box */
-        background: white; /* Background color */
-        overflow-y: auto; /* Allow scrolling for overflow content */
-        z-index: 10; /* Ensure it's above other elements */
-    }
-
-    #cy {
-        position: absolute;
-        width: 100%;
-        height: 700px;
-        border: 1px solid #000;
-        margin-top: 20px;
-        margin-right: 50px;
-    }
-
-    #contextMenu {
-        display: none;
-        position: fixed; /* Changed from absolute to fixed */
-        z-index: 1000;
-        background: white;
-        border: 1px solid black;
-        padding: 10px;
-    }
-
-    #contextMenu ul {
-        list-style: none;
-        /* Remove bullet points */
-        margin: 0;
-        padding: 0;
-    }
-
-    #contextMenu li {
-        padding: 5px 10px;
-        color: black;
-        cursor: pointer;
-    }
-
-    #contextMenu li:hover {
-        background-color: #f0f0f0;
-        /* Visual feedback on hover */
-    }
-
-    #timeTravelSliderContainer {
-        margin: 20px 0;
-        text-align: center; /* Center align the slider and label */
-    }
-
-    #timeTravelSlider {
-        width: 30%; /* Full-width */
-        height: 15px; /* Specified height */
-        background: #ddd; /* Grey background */
-        outline: none; /* Remove outline */
-        opacity: 0.7; /* Set transparency (cross-browser) */
-        -webkit-transition: .2s; /* 0.2 seconds transition on hover */
-        transition: opacity .2s;
-    }
-
-    #timeTravelSlider:hover {
-        opacity: 1; /* Fully opaque on hover */
-    }
-
-    #timeTravelSlider::-webkit-slider-thumb {
-        -webkit-appearance: none; /* Override default look */
-        appearance: none;
-        width: 25px; /* Set a specific slider handle width */
-        height: 25px; /* Slider handle height */
-        background: #4CAF50; /* Green background */
-        cursor: pointer; /* Cursor on hover */
-    }
-
-    #timeTravelSlider::-moz-range-thumb {
-        width: 25px; /* Set a specific slider handle width */
-        height: 25px; /* Slider handle height */
-        background: #4CAF50; /* Green background */
-        cursor: pointer; /* Cursor on hover */
-    }
-</style>
 
 <body>
     <form id="actorForm" label="Actor Form" action="/actor/depth" method="post">
@@ -155,15 +26,6 @@
         <button id="resetGraph">Reset Graph</button>
     </div>
 
-
-    <div id="contextMenu"
-        style="display: none; position: absolute; z-index: 10; background: white; border: 1px solid black; padding: 10px;">
-        <ul>
-            <li id="showMovies" style="display: none;">Show movies</li>
-            <li id="showActors" style="display: none;">Show actors</li>
-        </ul>
-    </div>
-
     <div id="properties" style="position: absolute; top: 300px; left: 20px; width: 300px; height: 600px; border: 1px solid black; padding: 10px; background: white;">
         <h3>Properties</h3>
         <div id="properties-content">Click on a node to see its properties.</div>
@@ -171,7 +33,7 @@
       
     <div id="cy"></div>
 
-    <script type="module">
+    <script type="module">        
         var layoutOptions = {
             name: 'fcose',
             animate: true,
@@ -244,43 +106,37 @@
             }
         );
 
-        cy.on('cxttap', 'node', function (event) {
-            var node = event.target;
-            var renderedPosition = node.renderedPosition();
+        
+        var layoutApi = cy.layoutUtilities();
 
-            // Determine whether it's an actor or a movie node
-            var isActor = node.data('type') === 'Person';
-            var isMovie = node.data('type') === 'Movie';
+        var viewApi = cy.viewUtilities();
 
-            // Show/hide menu items based on node type
-            document.getElementById('showMovies').style.display = isActor ? 'block' : 'none';
-            document.getElementById('showActors').style.display = isMovie ? 'block' : 'none';
 
-            // Get the position of the click event relative to the viewport
-            var posX = event.originalEvent.clientX;
-            var posY = event.originalEvent.clientY;
 
-            // Position and display the context menu
-            var contextMenu = document.getElementById('contextMenu');
-            contextMenu.style.display = 'block';
-            contextMenu.style.left = posX + 'px';
-            contextMenu.style.top = posY + 'px';
 
-            // Event listener for "Show movies"
-            document.getElementById('showMovies').onclick = function () {
-                fetchMovies(node.id());
-            };
-
-            // Event listener for "Show actors"
-            document.getElementById('showActors').onclick = function () {
-                console.log(node.id());
-                fetchActors(node.id());
-            };
-        });
-
-        // Hide the context menu on graph tap
-        cy.on('tap', function (event) {
-            document.getElementById('contextMenu').style.display = 'none';
+        cy.contextMenus({
+        menuItems: [
+            {
+            id: 'showMoviesOfPerson',
+            content: 'Show movies of person',
+            tooltipText: 'show movies of person',
+            selector: 'node[type="Person"]',
+            onClickFunction: function (event) {
+                var target = event.target || event.cyTarget;
+                fetchMovies(target._private.data.id);
+            }
+            },
+            {
+            id: 'showActorsOfMovie',
+            content: 'Show actors of movie',
+            tooltipText: 'Show actors of movie',
+            selector: 'node[type="Movie"]',
+            onClickFunction: function (event) {
+                var target = event.target || event.cyTarget;
+                fetchActors(target._private.data.id);
+            }
+            }
+        ]
         });
 
         //Display properties on tap
@@ -315,7 +171,6 @@
                 data: { actorId: actorId },
                 success: function (newData) {
                     addNewData(newData)
-                    console.log(newData);
                 }
             });
         }
@@ -329,7 +184,6 @@
                 data: { movieId: movieId },
                 success: function (newData) {
                     addNewData(newData)
-                    console.log(newData);
                 }
             });
         }
@@ -338,15 +192,6 @@
             cy.add(dataArr);
             cy.layout(newDataLayoutOptions).run();
         }
-
-
-        //Add a class to hide nodes and edges
-        cy.style()
-            .selector('.hidden')
-            .style({
-                'display': 'none'
-            })
-            .update();
 
         //Event listener for slider
         document.addEventListener('DOMContentLoaded', function () {
@@ -361,12 +206,16 @@
 
         // Event listener for reset button
         document.getElementById('resetGraph').addEventListener('click', function() {
-            //unhide all nodes and edges
+            //make the hidden nodes visible
+            viewApi.show(cy.nodes('.hidden'));
+            //remove hidden class from the nodes
             cy.elements().removeClass('hidden');
+
             //reset slider
             document.getElementById('timeTravelSlider').value = 2024;
             document.getElementById('sliderYearDisplay').textContent = 2024;
-            cy.layout(newDataLayoutOptions).run();
+            //display the graph
+            cy.layout(layoutOptions).run();
         });
 
         function filterGraphByYear(year) {
@@ -385,16 +234,24 @@
                     node.connectedEdges().removeClass('hidden');
                 }
             });
+
+            //hide the nodes with view utilities
+            viewApi.hide(cy.nodes('.hidden'));
+
             //display the graph
             cy.layout(layoutOptions).run();
         }   
 
         // Pass data from server to client and add to cytoscape
         function addDataToCytoscape(dataArr) {
-            console.log(dataArr);
-            //remove nodes
+            //remove all earlier nodes
             cy.remove('node')
-            cy.add(dataArr);
+
+            //add new nodes
+            var newNodesAll = cy.collection(dataArr);
+            layoutApi.placeNewNodes(newNodesAll);            
+
+            //display
             cy.layout(layoutOptions).run();
         }
 

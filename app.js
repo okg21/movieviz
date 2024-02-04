@@ -9,14 +9,6 @@ var neo4j = require('neo4j-driver');
 var cytoscape = require('cytoscape');
 var fcose = require('cytoscape-fcose');
 
-// Workaround for window not being defined, not sure if this is a good practice?
-window = {};
-
-var layoutUtilities = require('cytoscape-layout-utilities');
-cytoscape.use( layoutUtilities ); // register extension
-
-var viewUtilities = require('cytoscape-view-utilities');
-viewUtilities(cytoscape); // register extension
 
 cytoscape.use(fcose);
 
