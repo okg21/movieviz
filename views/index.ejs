@@ -40,6 +40,11 @@
         <input type="submit" value="Submit">
     </form>
 
+    <form id="llm-input" label="LLM Input" action="/llm" method="post">
+        <input type="text" name="llm" placeholder="Try the LLM feature">
+        <input type="submit" value="Submit">
+    </form>
+
     <!-- Time Travel Slider -->
     <div id="timeTravelSliderContainer">
         <label for="timeTravelSlider">Select a Year: <span id="sliderYearDisplay">2024</span></label>
@@ -310,5 +315,30 @@
                 };
             }
         });
+
+        // Event listener for LLM form submission
+        document.addEventListener('DOMContentLoaded', function() {
+            var form = document.getElementById('llm-input');
+            if (form) {
+                form.onsubmit = function (e) {
+                    e.preventDefault();
+                    var llm_prompt = document.querySelector('[name="llm"]').value;
+                    console.log("captured: ", llm_prompt);
+                    var formData = { prompt: llm_prompt };
+                    
+                    // Make AJAX Call
+                    $.ajax({
+                        type: "POST",
+                        url: "/llm",
+                        data: formData,
+                        success: function (dataArr) {
+                            addDataToCytoscape(dataArr)
+                        }
+                    });
+                }
+            }
+        });
+
+
     </script>
 </body>

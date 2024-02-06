@@ -23,7 +23,10 @@ MovieViz is a web application that allows users to visualize movie data. It uses
      (Or change authentication details inside app.js)
      Run load-movies.cypher
      ```
-
+4. Create a .env file and store your OpenAI token such as:
+    ```
+    OPENAI_TOKEN = <YOUR OPENAI TOKEN>
+    ```
 ## Usage
 
 1. Start the application:
